@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - shader [Monjori]</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #ffffff;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				font-weight: bold;
+
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+
+			a {
+
+				color: #ffffff;
+			}
+
+			#oldie a { color:#da0 }
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - shader demo. featuring <a href="http://www.pouet.net/prod.php?which=52761" target="_blank">Monjori by Mic</a></div>
+
+		<script src="vendor/three.js/build/three.min.js"></script>
+
+		<script id="vertexShader" type="x-shader/x-vertex">
+
+			void main()	{
+
+				gl_Position = vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script>
+
+			var container, stats;
+
+			var camera, scene, renderer;
+
+			var uniforms;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				camera = new THREE.Camera();
+				camera.position.z = 1;
+
+				scene = new THREE.Scene();
+
+				var geometry = new THREE.PlaneBufferGeometry( 2, 2 );
+
+				uniforms = {
+					iResolution: { type: "v3", value: new THREE.Vector3() },
+					iMouse: { type: "v4", value: new THREE.Vector4() },
+					iGlobalTime: { type: "f", value: 0 },
+				};
+				
+var fragmentShaderUrl = 'basic-red.glsl'	
+var fragmentShaderUrl = 'effect.glsl'	
+var fragmentShaderUrl = 'shadertoys/daqri-distancefield.glsl'	
+// var fragmentShaderUrl = 'manual.glsl'	
+var request = new XMLHttpRequest();
+request.open('GET', fragmentShaderUrl, false);  // `false` makes the request synchronous
+request.send(null);
+console.assert(request.status === 200)
+var fragmentShaderContent	= request.responseText
+
+				var material = new THREE.ShaderMaterial( {
+
+					uniforms: uniforms,
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: fragmentShaderContent
+
+				} );
+
+				var mesh = new THREE.Mesh( geometry, material );
+				scene.add( mesh );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				container.appendChild( renderer.domElement );
+
+				onWindowResize();
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				window.addEventListener( 'mousemove', function(event){
+					// console.log('mouse move', event)
+					uniforms.iMouse.value.x = event.clientX
+					uniforms.iMouse.value.y = event.clientY
+				}, false );
+
+			}
+
+			function onWindowResize( event ) {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				uniforms.iResolution.value.x = renderer.domElement.width;
+				uniforms.iResolution.value.y = renderer.domElement.height;
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+
+			}
+
+			function render() {
+
+				uniforms.iGlobalTime.value += 0.1;
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>
