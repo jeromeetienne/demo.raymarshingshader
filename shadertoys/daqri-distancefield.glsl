@@ -157,6 +157,15 @@ vec3 opTwist( vec3 p )
 	return vec3(m*p.xz,p.y);
 }
 
+vec3 opRotationX( vec3 p, float angle )
+{
+	float  c = cos(angle);
+	float  s = sin(angle);
+	mat2   m = mat2(c,-s,s,c);
+	return vec3(m*p.yz,p.x);
+}
+
+
 vec3 opRotationY( vec3 p, float angle )
 {
 	float  c = cos(angle);
@@ -164,7 +173,6 @@ vec3 opRotationY( vec3 p, float angle )
 	mat2   m = mat2(c,-s,s,c);
 	return vec3(m*p.xz,p.y);
 }
-
 
 vec3 opRotationZ( vec3 p, float angle )
 {
@@ -176,23 +184,19 @@ vec3 opRotationZ( vec3 p, float angle )
 
 //----------------------------------------------------------------------
 
-vec2 map( in vec3 pos )
-{
+vec2 map( in vec3 pos ){
+	vec3 position3;
+	vec3 size3;
+	vec2 size2;
+	float angle;
+	#define M_PI 3.1415926535897932384626433832795
+
+	vec2 res = vec2( sdPlane(pos), 0.1 );
 	// vec2 res = opU( 
 	// 	vec2( sdPlane(pos), 1.0 ),
 	// 	vec2( sdSphere(pos-vec3( 0.0,0.25, 0.0), 0.25 ), 46.9 )
 	// );
 
-	vec3 ballPosition = vec3(-0.0,0.6,0.0);
-	// ballPosition.x = sin(10000.0);
-	ballPosition.x = cos(iGlobalTime/5.0)*1.0;
-	ballPosition.z = sin(iGlobalTime/5.0)*1.0;
-	// ballPosition.y = sin(2.0);
-	float radius = 0.2;
-
-	vec2 res = vec2( sdPlane(pos), 0.1 );
-	
-	// float sphere = sdSphere(opRep(pos-ballPosition, vec3(0.6,0.6,0.6)), radius);
 	// 
 	// res = opU( res, vec2( opI(
 	// 	udRoundBox(opRep(pos-vec3( -0.0,0.3, 0.0), vec3(2.0,0.0,2.0)), vec3(0.8,0.05,0.8), 0.1 ),
@@ -201,11 +205,6 @@ vec2 map( in vec3 pos )
 	// 
 	// // res = opU( res, vec2( sphere, 2.0 ) );
 	
-	vec3 position3;
-	vec3 size3;
-	vec2 size2;
-	float angle;
-	#define M_PI 3.1415926535897932384626433832795
 
 	// daqri logo
 	position3 = vec3( 0.0,1.0, 0.0);
@@ -294,8 +293,8 @@ vec2 map( in vec3 pos )
 
 vec2 castRay( in vec3 ro, in vec3 rd )
 {
-	float tmin = 1.0;
-	float tmax = 20.0;
+	float tmin = 0.2;
+	float tmax = 5.0;
 		
 	float precis = 0.002;
 	float t = tmin;
@@ -369,7 +368,7 @@ vec3 render( in vec3 ro, in vec3 rd )
 		vec3 ref = reflect( rd, nor );
 		
 		// material        
-		col = 0.45 + 0.3*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
+		col = 0.45 + 0.4*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
 		
 		if( m<1.5 )
 		{
@@ -430,9 +429,9 @@ void main()
 	float time = 15.0;
 	
 	// camera	
-	vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.5*sin(0.1*time + 6.0*mo.x) );
+	vec3 ro = vec3( -0.5+2.5*cos(0.1*time + 6.0*mo.x), 1.0 + 1.0*mo.y, 0.5 + 2.5*sin(0.1*time + 6.0*mo.x) );
 	// vec3 ro = vec3( 0.0, 2.0, 1.5 );
-	vec3 ta = vec3( -0.0, -0.0, 0.0 );
+	vec3 ta = vec3( -0.0, 0.75, 0.0 );
 	
 	// camera-to-world transformation
 	mat3 ca = setCamera( ro, ta, 0.0 );
@@ -443,7 +442,8 @@ void main()
 	// render	
 	vec3 col = render( ro, rd );
 	
-	col = pow( col, vec3(0.4545) );
+	// col = pow( col, vec3(0.4545) );
+	// col = pow( col, vec3(1.0) );
 	
 	gl_FragColor = vec4( col, 1.0 );
 }

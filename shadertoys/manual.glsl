@@ -1,7 +1,6 @@
 uniform vec3	iResolution;
 uniform vec4	iMouse;
-float	iGlobalTime;
-
+uniform float	iGlobalTime;
 // Created by inigo quilez - iq/2013
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
@@ -137,6 +136,11 @@ vec2 opU( vec2 d1, vec2 d2 )
 	return (d1.x<d2.x) ? d1 : d2;
 }
 
+float opI( float d1, float d2 )
+{
+    return max(d1,d2);
+}
+
 vec3 opRep( vec3 p, vec3 c )
 {
 	return mod(p,c)-0.5*c;
@@ -144,15 +148,122 @@ vec3 opRep( vec3 p, vec3 c )
 
 vec3 opTwist( vec3 p )
 {
-	float  c = cos(10.0*p.y+10.0);
-	float  s = sin(10.0*p.y+10.0);
+	float angle = 2.0*cos(iGlobalTime/2.0)*p.y+0.0;
+	angle = 0.0;
+	// angle = angle + cos(iGlobalTime);
+	float  c = cos(angle);
+	float  s = sin(angle);
 	mat2   m = mat2(c,-s,s,c);
 	return vec3(m*p.xz,p.y);
 }
+
+vec3 opRotationY( vec3 p, float angle )
+{
+	float  c = cos(angle);
+	float  s = sin(angle);
+	mat2   m = mat2(c,-s,s,c);
+	return vec3(m*p.xz,p.y);
+}
+
+
+vec3 opRotationZ( vec3 p, float angle )
+{
+	float  c = cos(angle);
+	float  s = sin(angle);
+	mat2   m = mat2(c,-s,s,c);
+	return vec3(m*p.xy,p.z);
+}
+
+//----------------------------------------------------------------------
+
 vec2 map( in vec3 pos )
 {
-	vec2 res = opU( vec2( sdPlane(     pos), 1.0 ),
-	vec2( sdSphere(    pos-vec3( 0.0,0.25, 0.0), 0.25 ), 46.9 ) );
+	// vec2 res = opU( 
+	// 	vec2( sdPlane(pos), 1.0 ),
+	// 	vec2( sdSphere(pos-vec3( 0.0,0.25, 0.0), 0.25 ), 46.9 )
+	// );
+
+	vec3 ballPosition = vec3(-0.0,0.6,0.0);
+	// ballPosition.x = sin(10000.0);
+	ballPosition.x = cos(iGlobalTime/5.0)*1.0;
+	ballPosition.z = sin(iGlobalTime/5.0)*1.0;
+	// ballPosition.y = sin(2.0);
+	float radius = 0.2;
+
+	vec2 res = vec2( sdPlane(pos), 0.1 );
+	
+	// float sphere = sdSphere(opRep(pos-ballPosition, vec3(0.6,0.6,0.6)), radius);
+	// 
+	// res = opU( res, vec2( opI(
+	// 	udRoundBox(opRep(pos-vec3( -0.0,0.3, 0.0), vec3(2.0,0.0,2.0)), vec3(0.8,0.05,0.8), 0.1 ),
+	// 	sphere
+	// ), 3.0 ) );
+	// 
+	// // res = opU( res, vec2( sphere, 2.0 ) );
+	
+	vec3 position3;
+	vec3 size3;
+	vec2 size2;
+	float angle;
+	#define M_PI 3.1415926535897932384626433832795
+
+	// daqri logo
+	position3 = vec3( 0.0,1.0, 0.0);
+	size3 = vec3(0.25,0.1,0.1);
+	res = opU( res, vec2( sdBox(pos-position3, size3), 80.0 ) );
+
+	position3 = vec3( -0.45,0.75, 0.0);
+	size3 = vec3(0.4,0.1,0.1);
+	angle = -M_PI/4.0;
+	res = opU( res, vec2( sdBox(opRotationZ(pos-position3, angle), size3), 80.0 ) );
+
+	position3 = vec3( 0.46,0.745, 0.0);
+	size3 = vec3(0.4,0.1,0.1);
+	angle = -M_PI/4.0;
+	res = opU( res, vec2( sdBox(opRotationZ(pos-position3, angle), size3), 80.0 ) );
+
+	position3 = vec3( 0.0,0.5, 0.0);
+	size3 = vec3(0.25,0.1,0.1);
+	res = opU( res, vec2( sdBox(pos-position3, size3), 80.0 ) );
+
+	// vice
+	position3 = vec3( 1.0,0.75, 0.3);
+	size2 = vec2(0.25,0.075);
+	res = opU( res, vec2( sdHexPrism(  pos-position3, size2 ), 2.0 ) );
+
+	position3 = vec3( 1.0,0.75, 0.0);
+	size2 = vec2(0.1,0.3);
+	res = opU( res, vec2( sdCylinder( opTwist(pos-position3), size2 ), 8.0 ) );
+
+	// rondelle
+	position3 = vec3( 0.0,0.25, 2.0);
+	size2 = vec2(0.20,0.05);
+	res = opU( res, vec2( sdTorus82(pos-position3, size2), 2.0 ) );
+
+	// ecrou avec des trous
+	res = opU( res,
+		vec2( 
+			opS(
+				sdTorus82(  pos-vec3(-2.0,0.2, 0.0), vec2(0.20,0.1)),
+				sdCylinder(
+					opRep( 
+						vec3(
+							atan(pos.x+2.0,pos.z)/6.2831,
+							pos.y,
+							0.02+0.5*length(pos-vec3(-2.0,0.2, 0.0))
+						),
+						vec3(0.05,1.0,0.05)
+					),
+					vec2(0.02,0.6)
+				)
+			), 51.0
+		)
+	);
+
+	// res = opU( res, vec2( sdBox(pos-vec3( 0.0,0.1, 0.0), vec3(0.5,0.1,0.1) ), 2.0 ) );
+
+	// vec2 res = opU( vec2( sdPlane(     pos), 1.0 ),
+	// vec2( sdSphere(    pos-vec3( 0.0,0.25, 0.0), 0.25 ), 46.9 ) );
 	// res = opU( res, vec2( sdBox(       pos-vec3( 1.0,0.25, 0.0), vec3(0.25) ), 3.0 ) );
 	// res = opU( res, vec2( udRoundBox(  pos-vec3( 1.0,0.25, 1.0), vec3(0.15), 0.1 ), 41.0 ) );
 	// res = opU( res, vec2( sdTorus(     pos-vec3( 0.0,0.25, 1.0), vec2(0.20,0.05) ), 25.0 ) );
@@ -168,19 +279,15 @@ vec2 map( in vec3 pos )
 	// res = opU( res, vec2( opS(
 	// 	udRoundBox(  pos-vec3(-2.0,0.2, 1.0), vec3(0.15),0.05),
 	// 	sdSphere(    pos-vec3(-2.0,0.2, 1.0), 0.25)), 13.0 ) );
-	// 	res = opU( res, vec2( opS(
-	// 		sdTorus82(  pos-vec3(-2.0,0.2, 0.0), vec2(0.20,0.1)),
-	// 		sdCylinder(  opRep( vec3(atan(pos.x+2.0,pos.z)/6.2831,
-	// 		pos.y,
-	// 		0.02+0.5*length(pos-vec3(-2.0,0.2, 0.0))),
-	// 		vec3(0.05,1.0,0.05)), vec2(0.02,0.6))), 51.0 ) );
-	// 		res = opU( res, vec2( 0.7*sdSphere(    pos-vec3(-2.0,0.25,-1.0), 0.2 ) + 
-	// 		0.03*sin(50.0*pos.x)*sin(50.0*pos.y)*sin(50.0*pos.z), 
-	// 		65.0 ) );
-	// 		res = opU( res, vec2( 0.5*sdTorus( opTwist(pos-vec3(-2.0,0.25, 2.0)),vec2(0.20,0.05)), 46.7 ) );
-	// 		
-	// 		res = opU( res, vec2(sdConeSection( pos-vec3( 0.0,0.35,-2.0), 0.15, 0.2, 0.1 ), 13.67 ) );
-	
+
+
+	// res = opU( res, vec2( 0.7*sdSphere(    pos-vec3(-2.0,0.25,-1.0), 0.2 ) +
+	// 	0.03*sin(50.0*pos.x)*sin(50.0*pos.y)*sin(50.0*pos.z), 
+	// 	65.0 ) );
+	// res = opU( res, vec2( 0.5*sdTorus( opTwist(pos-vec3(-2.0,0.25, 2.0)),vec2(0.20,0.05)), 46.7 ) );
+	// 
+	// res = opU( res, vec2(sdConeSection( pos-vec3( 0.0,0.35,-2.0), 0.15, 0.2, 0.1 ), 13.67 ) );
+	// 
 	
 	return res;
 }
@@ -245,6 +352,8 @@ float calcAO( in vec3 pos, in vec3 nor )
 	}
 	return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
+	
+		
 		
 		
 vec3 render( in vec3 ro, in vec3 rd )
@@ -299,7 +408,6 @@ vec3 render( in vec3 ro, in vec3 rd )
 	return vec3( clamp(col,0.0,1.0) );
 }
 
-
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 {
 	vec3 cw = normalize(ta-ro);
@@ -309,17 +417,22 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 	return mat3( cu, cv, cw );
 }
 
-void main()	{
+void main()
+// void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
 	vec2 q = gl_FragCoord.xy/iResolution.xy;
 	vec2 p = -1.0+2.0*q;
 	p.x *= iResolution.x/iResolution.y;
 	vec2 mo = iMouse.xy/iResolution.xy;
+	// vec2 mo = vec2(0.0,0.0);
 	
-	float time = 15.0 + iGlobalTime;
+	// float time = 15.0 + iGlobalTime;
+	float time = 15.0;
 	
 	// camera	
-	vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.5*sin(0.1*time + 6.0*mo.x) );
-	vec3 ta = vec3( -0.5, -0.4, 0.5 );
+	vec3 ro = vec3( -0.5+2.5*cos(0.1*time + 6.0*mo.x), 1.0 + 1.0*mo.y, 0.5 + 2.5*sin(0.1*time + 6.0*mo.x) );
+	// vec3 ro = vec3( 0.0, 2.0, 1.5 );
+	vec3 ta = vec3( -0.0, 0.75, 0.0 );
 	
 	// camera-to-world transformation
 	mat3 ca = setCamera( ro, ta, 0.0 );
@@ -330,10 +443,8 @@ void main()	{
 	// render	
 	vec3 col = render( ro, rd );
 	
-	col = pow( col, vec3(0.4545) );
+	// col = pow( col, vec3(0.4545) );
+	// col = pow( col, vec3(1.0) );
 	
 	gl_FragColor = vec4( col, 1.0 );
-	// 
-	// gl_FragColor=vec4(1.0, 1.0,0.0,1.0);
-	
 }
